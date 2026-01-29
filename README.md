@@ -2,12 +2,17 @@
 
 An AI-powered tech support system that provides elder-friendly assistance, attempts to resolve issues, and intelligently categorizes cases for human agent handoff.
 
-## Project Status
+---
 
-### ✓ Phase 2 Complete: Baseten Model Deployment
 
-**Deployed Models:**
-1. **Support LLM** (Mistral 7B)
+## Development Phases
+
+✓ Deploy Mistral LLM
+✓ Configure and test Mistral Deployment
+- Deploy HF categorization model through truss
+- Test categorization model independently
+- Connect the two models together
+- Build frontend with Gradio
 
 ---
 
@@ -15,7 +20,7 @@ An AI-powered tech support system that provides elder-friendly assistance, attem
 
 ```
 ┌─────────────────────────────────────────────┐
-│         GRADIO FRONTEND (Layer 1)           │
+│         GRADIO FRONTEND  (Layer 1)           │
 │  - Large text input for problem description │
 │  - Elder-friendly UI (big fonts/buttons)    │
 │  - Two-click feedback system                │
@@ -54,15 +59,6 @@ An AI-powered tech support system that provides elder-friendly assistance, attem
   - Security Concern
   - Other
 - **Output**: Category + confidence score
-
----
-
-## Next Development Phases
-
-- Deploy HF categorization model through truss
-- Test categorization model independently
-- Connect the two models together
-- Build frontend with Gradio
 
 ---
 
