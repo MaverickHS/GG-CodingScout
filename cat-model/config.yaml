@@ -1,4 +1,5 @@
 model_name: categorize-model
+description: Zero-shot classifier for categorizing elder tech support issues
 python_version: py314
 resources:
   accelerator: null

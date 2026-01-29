@@ -1,3 +1,5 @@
 openai
 python-dotenv
 truss
+transformers
+requests
