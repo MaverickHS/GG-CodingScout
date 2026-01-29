@@ -1,0 +1,12 @@
+model_name: categorize-model
+python_version: py314
+resources:
+  accelerator: null
+  cpu: '1'
+  memory: 2Gi
+  use_gpu: false
+
+requirements:
+  - torch
+  - transformers
+  - accelerate
