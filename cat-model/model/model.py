@@ -19,6 +19,11 @@ CATEGORIES = [
     "Device Setup",
     "Email Problem",
     "Security Concern",
+    "Hardware Issue",
+    "Software Update",
+    "Connectivity Problem",
+    "Performance Issue",
+    "Installation Help",
     "Other"
 ]
 
