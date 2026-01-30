@@ -6,17 +6,13 @@ import time
 import threading
 from dotenv import load_dotenv
 
-# Add loading button after hitting submit info on 'No'
-
 load_dotenv()
 
 client = requests.Session()
 BASETEN_API_KEY = os.getenv('BASETEN_API_KEY')
-
-# store the user's problem for later
 user_problem = ""
 
-sys_msg = """You are a patient tech support assistant for seniors. Use short sentences. One step at a time. Avoid jargon.
+SYS_MSG = """You are a patient tech support assistant for seniors. Use short sentences. One step at a time. Avoid jargon.
 
 Provide: One simple step to try first in clear instructions. Keep under 5 sentences.
 Use simple words. Assume the user has no technical background and is using iOS and MacOS devices."""
@@ -30,7 +26,7 @@ def get_ai_response(problem):
         headers={"Authorization": f"Api-Key {BASETEN_API_KEY}"},
         json={'stream': False,
               'messages': [
-                  {'role': 'system', 'content': sys_msg},
+                  {'role': 'system', 'content': SYS_MSG},
                   {'role': 'user', 'content': f"A senior user says: `{problem}` Provide tech support as per the system instructions."}],
               'max_tokens': 200,
               'temperature': 0.4},
