@@ -1,12 +1,12 @@
 import gradio as gr
 import requests
 import os
+import csv
+import time
+import threading
 from dotenv import load_dotenv
 
-# Start up of TODOs
-# Start LLM on Baseten
-# Save user info into csv
-# Make goodgrandson image smaller
+# Add loading button after hitting submit info on 'No'
 
 load_dotenv()
 
@@ -32,7 +32,7 @@ def get_ai_response(problem):
               'messages': [
                   {'role': 'system', 'content': sys_msg},
                   {'role': 'user', 'content': f"A senior user says: `{problem}` Provide tech support as per the system instructions."}],
-              'max_tokens': 100,
+              'max_tokens': 200,
               'temperature': 0.4},
     )
 
@@ -50,11 +50,18 @@ def categorize_problem(problem):
     )
     return resp.json()
 
-def submit_problem(problem):
+def show_loading(problem):
     if not problem.strip():
-        return "", gr.update(visible=False), gr.update(visible=False)
+        return gr.update(value="", visible=False), gr.update(visible=False), "", problem
+    return gr.update(value="Loading...", visible=True), gr.update(visible=False), "", problem
+
+def submit_problem(problem, start_time):
+    if not problem.strip():
+        return gr.update(value="", visible=False), gr.update(visible=False), gr.update(visible=False), ""
     response = get_ai_response(problem)
-    return response, gr.update(visible=True), gr.update(visible=False)
+    elapsed = time.time() - start_time
+    timer_text = f"Response generated in {elapsed:.1f} seconds"
+    return gr.update(value=response, visible=True), gr.update(visible=True), gr.update(visible=False), timer_text
 
 def handle_yes():
     return gr.update(visible=False), gr.update(visible=True), "Thank you! We're glad we could help. Please share your info so we can follow up:"
@@ -62,24 +69,42 @@ def handle_yes():
 def handle_no():
     return gr.update(visible=False), gr.update(visible=True), "Sorry to hear that. Please share your info and we'll create a ticket:"
 
+def validate_email(email):
+    return "@" in email and "." in email
+
+def validate_phone(phone):
+    digits = ''.join(c for c in phone if c.isdigit())
+    return len(digits) == 10
+
+def save_to_csv(name, email, phone, category):
+    with open("user_data.csv", "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([name, email, phone, category])
+
 def submit_info_yes(name, email, phone):
+    save_to_csv(name, email, phone, "Problem Solved")
     return f"Thank you {name}! Your information has been saved. We appreciate your feedback!", gr.update(visible=True)
+
+def categorize_and_save(name, email, phone, problem):
+    category = categorize_problem(problem)
+    save_to_csv(name, email, phone, category)
 
 def submit_info_no(name, email, phone):
     global user_problem
-    category = categorize_problem(user_problem)
-    return f"Thank you {name}! A new {category} ticket has been made. I will reach out shortly.", gr.update(visible=True)
+    threading.Thread(target=categorize_and_save, args=(name, email, phone, user_problem)).start()
+    return f"Thank you {name}! A ticket has been created and I will reach out shortly.", gr.update(visible=True)
 
 def start_over():
-    return "", "", gr.update(visible=False), gr.update(visible=False), "", "", "", "", gr.update(visible=False)
+    return "", gr.update(value="", visible=False), gr.update(visible=False), gr.update(visible=False), "", "", "", "", gr.update(visible=False), ""
 
 with gr.Blocks() as demo:
-    gr.Image("GoodGrandsonLogo.PNG", show_label=False, container=False)
+    gr.Image("GoodGrandsonLogo.PNG", show_label=False, container=False, width=100)
 
     problem_input = gr.Textbox(label="Enter your tech problem", placeholder="Type your problem here...")
     submit_btn = gr.Button("Submit")
 
-    response_output = gr.Textbox(label="", interactive=False, elem_id="response", scale=2)
+    response_output = gr.Textbox(label="Suggested Troubleshooting", interactive=False, elem_id="response", scale=2, visible=False)
+    timer_display = gr.Markdown("")
 
     with gr.Row(visible=False) as feedback_row:
         gr.Markdown("**Did this fix your problem?**")
@@ -98,11 +123,22 @@ with gr.Blocks() as demo:
 
     # track if user clicked yes or no
     user_clicked_yes = gr.State(False)
+    start_time = gr.State(0)
+
+    def capture_start_time():
+        return time.time()
 
     submit_btn.click(
-        submit_problem,
+        capture_start_time,
+        outputs=[start_time]
+    ).then(
+        show_loading,
         inputs=[problem_input],
-        outputs=[response_output, feedback_row, info_form]
+        outputs=[response_output, feedback_row, timer_display, problem_input]
+    ).then(
+        submit_problem,
+        inputs=[problem_input, start_time],
+        outputs=[response_output, feedback_row, info_form, timer_display]
     )
 
     yes_btn.click(
@@ -116,6 +152,13 @@ with gr.Blocks() as demo:
     ).then(lambda: False, outputs=[user_clicked_yes])
 
     def submit_info_handler(name, email, phone, clicked_yes):
+        errors = []
+        if not validate_email(email):
+            errors.append("Please enter a valid email address (must contain @ and .)")
+        if not validate_phone(phone):
+            errors.append("Please enter a valid 10-digit phone number")
+        if errors:
+            return "\n\n".join(errors), gr.update(visible=False)
         if clicked_yes:
             return submit_info_yes(name, email, phone)
         else:
@@ -129,7 +172,7 @@ with gr.Blocks() as demo:
 
     start_over_btn.click(
         start_over,
-        outputs=[problem_input, response_output, feedback_row, info_form, name_input, email_input, phone_input, result_message, start_over_btn]
+        outputs=[problem_input, response_output, feedback_row, info_form, name_input, email_input, phone_input, result_message, start_over_btn, timer_display]
     )
 
 demo.launch()

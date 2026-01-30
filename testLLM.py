@@ -49,7 +49,7 @@ for case in cases:
           'messages': [
               {'role': 'system', 'content': sys_msg},
               {'role': 'user', 'content': f"A senior user says: `{case}` Provide tech support as per the system instructions."}],
-          'max_tokens': 100,
+          'max_tokens': 200,
           'temperature': 0.4},
     )
 
